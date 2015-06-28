@@ -1,0 +1,16 @@
+Name: workflow
+Cartridge-Short-Name: WORKFLOW
+Display-Name: workflow-script
+Description: workflow script that executes cutadapt and fastqc
+Version: "0.1"
+Cartridge-Version: 0.1
+Cartridge-Vendor: 1bertillo
+Categories:
+  - service
+Provides:
+  - workflow-script
+Scaling:
+  Min: 1
+  Max: -1
+  
+Source-Url: https://github.com/1bertillo/workflow.git

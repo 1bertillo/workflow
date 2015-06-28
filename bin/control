@@ -1,0 +1,52 @@
+#!/bin/bash
+
+version=workflow
+
+function status() {
+
+  	client_result $pwd
+    ps -C workflow > /dev/null
+    if [ "$?" -eq "0" ];
+    then
+    client_result "workflow is running";
+    else
+    client_result "workflow is not running";
+    fi
+
+
+}
+
+function start() {
+
+        ps -C workflow > /dev/null
+        if [ "$?" -eq "0" ]; then
+                client_result "workflow is running already...run stop first";
+        else
+#			getinternalip
+			client_result "workflow is not running...starting it now"
+			tar -xzvf reads*
+			rm reads_left.fq.tar.gz
+			python workflow reads_left.fq
+        fi
+
+}
+
+#
+#  main():
+#
+
+# Ensure arguments.
+if ! [ $# -gt 0 ]; then
+    echo "Usage: $0 [start|status]"
+    exit 1
+fi
+
+# Source utility functions.
+source $OPENSHIFT_CARTRIDGE_SDK_BASH
+
+# Handle commands.
+case "$1" in
+    start)               start       ;;
+    status)              status      ;;
+    *)
+esac

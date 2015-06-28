@@ -26,7 +26,7 @@ function start() {
 			client_result "workflow is not running...starting it now"
 			tar -xzvf versions/reads_left.fq.tar.gz
 			tar -xvf versions/workflow.tar
-			python workflow reads_left.fq
+			python workflow versions/reads_left.fq
         fi
 
 }

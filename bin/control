@@ -24,7 +24,7 @@ function start() {
         else
 			client_result `pwd`
 			client_result "workflow is not running...starting it now"
-			python workflow /versions/reads_left.fq
+			python workflow reads_left.fq
         fi
 
 }

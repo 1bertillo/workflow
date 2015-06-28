@@ -24,7 +24,7 @@ function start() {
         else
 #			getinternalip
 			client_result "workflow is not running...starting it now"
-			tar -xzf reads*
+			tar -xvf reads_left.fq.tar.gz
 			rm reads_left.fq.tar
 			tar -xzvf versions/workflow
 			python workflow reads_left.fq

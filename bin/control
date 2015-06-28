@@ -22,10 +22,11 @@ function start() {
         if [ "$?" -eq "0" ]; then
                 client_result "workflow is running already...run stop first";
         else
-#			getinternalip
 			client_result "workflow is not running...starting it now"
 			tar -xzvf versions/reads_left.fq.tar.gz
 			tar -xvf versions/workflow.tar
+			client_result `pwd`
+			client_result `ls - l`
 			python versions/workflow versions/reads_left.fq
         fi
 

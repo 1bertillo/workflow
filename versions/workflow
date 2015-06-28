@@ -53,7 +53,7 @@ def main():
     repocutadapt = "https://raw.githubusercontent.com/1bertillo/cutadapt/master/metadata/manifest.yml"
     repofastqc = "https://raw.githubusercontent.com/1bertillo/fastqc/master/metadata/manifest.yml"
         
-    #Execute fasqc(initial data)
+    #Execute fastqc(initial data)
     try:
         #Creating an application on OpenShift
         print "-> Creating application on OpenShift..."

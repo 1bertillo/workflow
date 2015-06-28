@@ -1,0 +1,190 @@
+#!/usr/bin/python
+
+#workflow
+#Script to execute fasqc and cutadapt simluating a workflow execution
+#By Alberto Otero
+
+
+#Importing subprocess (popen), shlex, shutil (copying files), re(process strings)
+import sys, getopt
+import shlex, subprocess, shutil, re
+
+def main():
+    #Argument Handling
+    try:
+        optlist, args = getopt.getopt(sys.argv[1:], "j:f:c:hs:n:", ["jre-path=","fastqc-path=","cutadapt-path=","help",'sequence=','app-name='])
+    except getopt.GetoptError as err:
+        print str(err)
+        usage()
+        sys.exit(1)
+    #Variables
+    inputPath = ""
+    fastqcPath = "./fastqc/fastqc/fastqc"
+    cutadaptPath = "./cutadapt/cutadapt-install/build/scripts-2.6/cutadapt"
+    jrePath = "./fastqc/jre/bin/java"
+    cadena = "AACCGGTT"
+    appName = "workflow"
+    for o, a in optlist:
+        if o in ("-j", "--jre-path"):
+            jrePath = a
+        elif o in ("-f", "--fastqc-path"):
+            fastqcPath = a
+        elif o in ("-c", "--cutadapt-path"):
+            cutadaptPath = a
+        elif o in ("-s", "--sequence"):
+            cadena = a
+        elif o in ("-n", "--app-name"):
+            appName = a
+        elif o in ("-h", "--help"):
+            usage()
+            sys.exit(1)
+        else:
+            print "Error: Unhandled option."
+            usage()
+            sys.exit(1)
+    if len(args)==1:
+        inputPath = args[0]
+    else:
+        print "Error: Unhandled argument."
+        usage()
+        sys.exit(1)
+    
+    outputPath = inputPath+".output.fq"
+    repocutadapt = "https://raw.githubusercontent.com/1bertillo/cutadapt/master/metadata/manifest.yml"
+    repofastqc = "https://raw.githubusercontent.com/1bertillo/fastqc/master/metadata/manifest.yml"
+        
+    #Execute fasqc(initial data)
+    try:
+        #Creating an application on OpenShift
+        print "-> Creating application on OpenShift..."
+        #makeApplication(appName)
+    except OSError as err:
+        print "ERROR: Could not create application on OpenShift."
+        print str(err)
+        sys.exit(1)
+    try:
+        print "-> Loading cartridge fastqc..."
+        #loadCartridge(appName, repofastqc)
+        print "-> Executing fastqc with "+inputPath+":"
+        fastqcexecute(fastqcPath, jrePath, inputPath)
+        print "--------------------------------------------------------------------"
+    except OSError as err:
+        print "ERROR: executing fastqc."
+        print str(err)
+        sys.exit(1)
+    #Execute cutadapt (initial data)
+    try:
+        print "-> Loading cartridge cutadapt..."
+        #loadCartridge(appName, repocutadapt)
+        print "-> Executing cutadapt:"
+        cutadaptexecute(cutadaptPath,cadena,inputPath,outputPath)
+        print "--------------------------------------------------------------------"
+    except OSError as err:
+        print "ERROR: executing cutadapt."
+        print str(err)
+        sys.exit(1)
+    #Executing fastqc (with cutadapt output)
+    try:
+        print "-> Executing fastqc con "+outputPath+":"
+        fastqcexecute(fastqcPath, jrePath, outputPath)
+        print "--------------------------------------------------------------------"
+    except OSError as err:
+        print "ERROR: executing fastqc."
+        print str(err)
+        sys.exit(1)
+    try:
+        #Deleting application on OpenShift
+        print "-> Deleting application on OpenShift..."
+        #deleteApplication(appName)
+    except OSError as err:
+        print "ERROR: Could not delete application on OpenShift."
+        print str(err)
+        sys.exit(1)	
+
+def cutadaptexecute(cutadaptPath,cadena,inputPath,outputPath):
+    #Executing cutadapt
+    commandLine = cutadaptPath+" -a "+cadena+" "+inputPath
+    #commandLine = "cutadapt"+" -a "+cadena+" "+inputPath
+    args = shlex.split(commandLine)
+    p1 = subprocess.Popen(args,True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    out,err=p1.communicate()
+    p1.wait()
+    #printing results
+    #print p1.communicate()
+    salida = open(outputPath,"w")
+    salida.write(out)
+    salida.close()
+    print err
+    
+def fastqcexecute(fastqcPath, jrePath, inputPath):
+    #Executing fasqc
+    commandLine = fastqcPath +" -j "+jrePath+ " -o . " + inputPath
+    args = shlex.split(commandLine)
+    p1 = subprocess.Popen(args)
+    p1.wait()
+    print "-> FastQC finalizado."
+    #Unzipping results
+    p2 = subprocess.Popen(shlex.split("unzip "+inputPath+"_fastqc.zip"),True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    out,error=p2.communicate()
+    p2.wait()
+    #Copying results and deleting them after
+    shutil.copy(inputPath+"_fastqc/fastqc_data.txt", ".")
+    shutil.move(inputPath+"_fastqc.zip", inputPath+"_fastqc")
+    shutil.move(inputPath+"_fastqc.html", inputPath+"_fastqc")
+    shutil.rmtree(inputPath+"_fastqc")
+    print "-> Datos Procesados:"
+    #Searching for results: pass, fail & warn
+    searchFile("fastqc_data.txt")
+    
+def searchFile(path):
+    #Searching pass, fail & warn
+    #Openning file
+    fich = open(path)
+    linea=fich.readline()
+    ok = re.compile("pass")
+    fail = re.compile("fail")
+    warn = re.compile("warn")
+    while linea != "":
+        #if exists
+        if (re.search(ok, linea)):
+            print "\t"+linea
+        elif (re.search(fail, linea)):
+            print "\t"+linea
+        elif (re.search(warn, linea)):
+            print "\t"+linea
+        linea=fich.readline()
+    fich.close()
+    
+def makeApplication(name):
+    #Creating the application
+    commandLine = "rhc app-create "+name+" python-2.7"
+    p = subprocess.Popen(shlex.split(commandLine))
+    p.wait()
+    print "-> Applicacion "+name+" creada."
+    
+def loadCartridge(name, repo):
+    #Loading the cartridge
+    commandLine = "rhc cartridge-add "+repo+" -a "+name
+    p = subprocess.Popen(shlex.split(commandLine))
+    p.wait()
+    print "-> "+repo+" montada a la aplicacion "+name+"."
+	
+def deleteApplication(name):
+    #Removing application
+    commandLine = "rhc app-delete "+name
+    p = subprocess.Popen(shlex.split(commandLine))
+    p.wait()
+    print "-> Application "+name+" deleted."
+
+def usage():
+    print "usage: workflow [options] <inputfile>"
+    print "Options:"
+    print "-j <jrePath> or --jre-path=<jrePath>: path to the jave runtime enviroment bin file. Default: jre/bin/java."
+    print "-f <fastqcPath> or --fastqc-path=<fastqcPath>: path to the fastqc binary. Default: fastqc/fastqc."
+    print "-c <cutadaptPath> or --cutadapt-path=<cutadaptPath>: path to the cutadapt binary. Default: cutadapt/cutadapt-install/bin/cutadapt."
+    print "-s <sequence> or --sequence=<sequence>: RNA sequence. Default: AACCGGTT"
+    print "-n <appName> or --app-name=<appName>: name for the openshift application. Default: workflow"
+    print "-h or --help: print this info."
+    
+if __name__ == "__main__":
+    main()

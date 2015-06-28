@@ -23,7 +23,7 @@ function start() {
                 client_result "workflow is running already...run stop first";
         else
 			client_result "workflow is not running...starting it now"
-			python workflow workflow/versions/reads_left.fq
+			python workflow /versions/reads_left.fq
         fi
 
 }

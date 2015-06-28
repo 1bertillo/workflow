@@ -4,5 +4,6 @@
 source $OPENSHIFT_CARTRIDGE_SDK_BASH
 client_result "installing workflow....`date`"
 tar -xzvf versions/reads_left.fq.tar.gz
+cd ..
 tar -xvf versions/workflow.tar
 client_result "install workflow completed....`date`"

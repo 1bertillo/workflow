@@ -22,6 +22,7 @@ function start() {
         if [ "$?" -eq "0" ]; then
                 client_result "workflow is running already...run stop first";
         else
+			client_result `pwd`
 			client_result "workflow is not running...starting it now"
 			#python workflow /versions/reads_left.fq
         fi

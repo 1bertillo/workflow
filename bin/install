@@ -1,0 +1,6 @@
+#!/bin/bash
+
+
+source $OPENSHIFT_CARTRIDGE_SDK_BASH
+client_result "installing workflow....`date`"
+client_result "install workflow....`date`"
